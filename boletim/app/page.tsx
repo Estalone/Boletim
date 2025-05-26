@@ -20,9 +20,6 @@ type Projetos = {
 };
 
 export default function Home() {
-  const [divFormClass, setDivFormClass] = useState("col-span-2");
-  const [divProjetoClass, setDivProjetoClass] = useState("col-span-1");
-
   //configura o form da cidade
   const [cidadeSelecionada, setCidadeSelecionada] = useState("");
   const {
@@ -75,24 +72,12 @@ export default function Home() {
     setValueProjeto("DOC", false);
   }
 
-  function priorizaForm() {
-    setDivProjetoClass("col-span-1");
-    setDivFormClass("col-span-2");
-  }
-
-  function priorizaProjeto() {
-    setDivProjetoClass("col-span-2");
-    setDivFormClass("col-span-1");
-  }
-
   return (
     <>
       <Nav cidade={cidadeSelecionada} />
       <div className="container mx-auto max-w-7xl">
-        <div className="grid grid-cols-3 gap-4">
-          <div
-            className={`${divFormClass} bg-black p-5 rounded-md transition-all`}
-          >
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-black p-5 rounded-md transition-all col-span-1">
             {/*
               FORM PARA SELECIONAR A CIDADE
             */}
@@ -196,7 +181,7 @@ export default function Home() {
           {/*
             DIV PARA PREENCHIMENTO DOS PROJETOS
           */}
-          <div className={`${divProjetoClass} bg-black p-5 rounded-md`}>
+          <div className="bg-black p-5 rounded-md col-span-1">
             <p className="mb-4">
               Referência:{" "}
               <span className="bg-stone-800 px-3 rounded-full">
@@ -204,15 +189,25 @@ export default function Home() {
               </span>
             </p>
             {projetosCard.saudeSimples && (
-              <CardProjeto projetoName="Saúde Simples" />
+              <CardProjeto
+                projetoName="Saúde Simples"
+                projetoRef="saudeSimples"
+              />
             )}
-            {projetosCard.GED && <CardProjeto projetoName="GED" />}
+            {projetosCard.GED && (
+              <CardProjeto projetoName="GED" projetoRef="ged" />
+            )}
             {projetosCard.outsourcing && (
-              <CardProjeto projetoName="Outsourcing" />
+              <CardProjeto projetoName="Outsourcing" projetoRef="outsourcing" />
             )}
-            {projetosCard.DOC && <CardProjeto projetoName="DOC+ Simples" />}
+            {projetosCard.DOC && (
+              <CardProjeto projetoName="DOC+ Simples" projetoRef="docSimples" />
+            )}
             {projetosCard.educacaoSimples && (
-              <CardProjeto projetoName="Educação Simples" />
+              <CardProjeto
+                projetoName="Educação Simples"
+                projetoRef="educacaoSimples"
+              />
             )}
           </div>
         </div>
