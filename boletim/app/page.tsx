@@ -195,7 +195,7 @@ export default function Home() {
               />
             )}
             {projetosCard.GED && (
-              <CardProjeto projetoName="GED" projetoRef="ged" />
+              <CardProjeto projetoName="GED" projetoRef="GED" />
             )}
             {projetosCard.outsourcing && (
               <CardProjeto projetoName="Outsourcing" projetoRef="outsourcing" />

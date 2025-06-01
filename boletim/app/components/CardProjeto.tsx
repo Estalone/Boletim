@@ -21,7 +21,9 @@ export default function CardProjeto(props: {
   projetoRef: string;
 }) {
   //modal IA
-  let [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false),
+    [loadingAI, setLoadingAI] = useState(false),
+    [textIA, setTextIA] = useState("");
 
   //conmfigura o formulário
   const {
@@ -38,10 +40,41 @@ export default function CardProjeto(props: {
     }
   };
 
-  function boletimAi() {
+  //função para enviar o texto para IA
+  function postBoletimGeradorIA(projetoRef: string) {
+    setLoadingAI(true);
+    const axios = require("axios").default;
+
+    axios
+      .post("/api/boletimGeradorIA", {
+        projeto: projetoRef,
+        texto: watch("text"),
+      })
+      .then((data: object) => {
+        console.log(data);
+      })
+      .catch((error: any) => {
+        //verifica se o erro é do axios
+        if (axios.isAxiosError(error)) {
+          //verifica se o servior respondeu
+          if (error.response) {
+            console.log(error.response.data);
+          } else {
+            console.log("Erro de rede, o servidor não respondeu:", error);
+          }
+        } else {
+          console.log("Erro interno inesperado:", error);
+        }
+      })
+      .finally(() => {
+        setLoadingAI(false);
+      });
+  }
+
+  function boletimIA(projetoRef: string) {
     if (watch("text").length >= 5) {
+      postBoletimGeradorIA(projetoRef);
       setIsOpen(true);
-      console.log(watch("text"));
     }
   }
 
@@ -65,23 +98,35 @@ export default function CardProjeto(props: {
               </span>
             </DialogTitle>
             <Description></Description>
-            <div className="flex gap-3">
-              <label htmlFor="meutexto">
-                Meu texto
-                <textarea
-                  name=""
-                  id="meutexto"
-                  className="w-full bg-stone-900 rounded-md max-h-52 min-h-40 p-3"
-                />
-              </label>
-
-              <label htmlFor="meutexto">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="meutexto">
+                  Meu texto
+                  <textarea
+                    name=""
+                    id="meutexto"
+                    className="w-full bg-stone-900 rounded-md max-h-52 min-h-52 p-3"
+                    defaultValue={watch("text")}
+                  />
+                </label>
+              </div>
+              <label htmlFor="textoIA">
                 Gerado por IA
-                <textarea
-                  name=""
-                  id="textoIA"
-                  className="w-full bg-stone-900 rounded-md max-h-52 min-h-40 p-3"
-                />
+                {loadingAI ? (
+                  <div className="w-full bg-stone-900 rounded-md h-52 p-3 animate-pulse mb-3">
+                    <div className="w-full bg-stone-800 rounded-md h-5 p-3 animate-pulse mb-3"></div>
+                    <div className="w-full bg-stone-800 rounded-md h-5 p-3 animate-pulse mb-3"></div>
+                    <div className="w-full bg-stone-800 rounded-md h-5 p-3 animate-pulse mb-3"></div>
+                    <div className="w-full bg-stone-800 rounded-md h-5 p-3 animate-pulse mb-3"></div>
+                  </div>
+                ) : (
+                  <textarea
+                    name="meutexto"
+                    id="textoIA"
+                    className="w-full bg-stone-900 rounded-md max-h-52 min-h-52 p-3"
+                    defaultValue={textIA}
+                  />
+                )}
               </label>
             </div>
             <div className="flex gap-4">
@@ -105,8 +150,8 @@ export default function CardProjeto(props: {
         <p className="mb-3">{props.projetoName}</p>
         <div className="">
           {/*
-      PEGA A PROP projetoRef E DEIXA SELECIONADO COMO PADRÃO PARA PODERMOS SABER QUAL PROJETO ESTAMOS PREENCHENDO
-    */}
+          PEGA A PROP projetoRef E DEIXA SELECIONADO COMO PADRÃO PARA PODERMOS SABER QUAL PROJETO ESTAMOS PREENCHENDO
+          */}
           <form onSubmit={handleSubmit(onSubmitText)}>
             <input
               type="hidden"
@@ -131,7 +176,7 @@ export default function CardProjeto(props: {
             )}
             <button
               className="bg-green-900 p-2 px-5 rounded-md mt-1 mr-3 text-sm"
-              onClick={boletimAi}
+              onClick={() => boletimIA(props.projetoRef)}
             >
               Boletim IA
               <SparklesIcon className="size-4 inline ml-3" />
