@@ -1,6 +1,9 @@
 "use client";
 
-import { SparklesIcon } from "@heroicons/react/24/outline";
+import {
+  SparklesIcon,
+  ClipboardDocumentCheckIcon,
+} from "@heroicons/react/24/outline";
 import { useForm, SubmitHandler } from "react-hook-form";
 import {
   Description,
@@ -31,6 +34,7 @@ export default function CardProjeto(props: {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors: textErrors },
   } = useForm<TextProjeto>();
 
@@ -40,7 +44,7 @@ export default function CardProjeto(props: {
       console.log(data);
     }
   };
-
+  //funções de estado de pesquisa de IA
   function loadingIA() {
     return (
       <div className="w-full bg-stone-900 rounded-md h-52 p-3 animate-pulse mb-3">
@@ -58,6 +62,7 @@ export default function CardProjeto(props: {
         id="textoIA"
         className="w-full bg-stone-900 rounded-md max-h-52 min-h-52 p-3"
         defaultValue={textIA}
+        onChange={(e) => setTextIA(e.target.value)}
       />
     );
   }
@@ -77,10 +82,9 @@ export default function CardProjeto(props: {
   type iaStatusExiste = keyof typeof sendGeradorIA;
 
   //função para enviar o texto para IA
-  function postBoletimGeradorIA(projetoRef: string) {
+  function GeradorIA(projetoRef: string) {
     setIaStatus("loading");
     const axios = require("axios").default;
-
     axios
       .post("/api/boletimGeradorIA", {
         projeto: projetoRef,
@@ -98,19 +102,34 @@ export default function CardProjeto(props: {
             setIaStatus("erro");
             setTextErrorIA(error.response.data);
           } else {
+            setIaStatus("erro");
+            setTextErrorIA({ message: "Erro de rede, consultar o console." });
             console.log("Erro de rede, o servidor não respondeu:", error);
           }
         } else {
+          setIaStatus("erro");
+          setTextErrorIA({ message: "Erro interno, consultar o console." });
           console.log("Erro interno inesperado:", error);
         }
       });
   }
 
   function boletimIA(projetoRef: string) {
+    //verifica se o mínimo de caracteres foi atingido QUANDO ATUALIZAMOS NO MODAL
     if (watch("text").length >= 5) {
-      postBoletimGeradorIA(projetoRef);
-      setIsOpen(true);
+      //não existindo erro prossegue abrindo o modal
+      if (!textErrors.text) {
+        //existindo um texto já gerado não envia os dados para gerar novamente
+        if (textIA.length <= 0) {
+          GeradorIA(projetoRef); //envia os dados para gerar IA
+        }
+        setIsOpen(true); //abre o modal
+      }
     }
+  }
+
+  function copiaTextoGerado() {
+    console.log(textIA);
   }
 
   return (
@@ -122,7 +141,7 @@ export default function CardProjeto(props: {
       >
         <DialogBackdrop className="fixed inset-0 bg-black/50" />
         <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
-          <DialogPanel className="max-w-3xl rounded-md bg-stone-950 p-12">
+          <DialogPanel className="min-w-3xl rounded-md bg-stone-950 p-12">
             <DialogTitle className="mb-10">
               <p className="text-2xl">
                 Boletim IA <SparklesIcon className="size-5 inline" />
@@ -133,7 +152,7 @@ export default function CardProjeto(props: {
               </span>
             </DialogTitle>
             <Description></Description>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 min-w-3xl">
               <div>
                 <label htmlFor="meutexto">
                   Meu texto
@@ -142,26 +161,35 @@ export default function CardProjeto(props: {
                     id="meutexto"
                     className="w-full bg-stone-900 rounded-md max-h-52 min-h-52 p-3"
                     defaultValue={watch("text")}
+                    onChange={(e) => setValue("text", e.target.value)}
                   />
+                  {textErrors.text && (
+                    <p className="text-sm text-red-500">
+                      {textErrors.text.message}
+                    </p>
+                  )}
                 </label>
               </div>
-              <label htmlFor="textoIA">
-                Gerado por IA
-                {sendGeradorIA[iaStatus as iaStatusExiste]}
-              </label>
+              <div>
+                <label htmlFor="textoIA">
+                  <div className="flex mb-3">
+                    <div className="flex-1">Gerado por IA</div>
+                    <div>
+                      <button className="px-2 rounded bg-blue-900 text-sm">
+                        Copiar
+                      </button>
+                    </div>
+                  </div>
+                  {sendGeradorIA[iaStatus as iaStatusExiste]}
+                </label>
+              </div>
             </div>
             <div className="flex gap-4">
               <button
                 onClick={() => setIsOpen(false)}
-                className="bg-red-900 p-2 px-5 rounded-md mt-5"
+                className="bg-green-900 p-2 px-5 rounded-md mt-5"
               >
-                Cancelar
-              </button>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="bg-blue-900 p-2 px-5 rounded-md mt-5"
-              >
-                Copiar texto gerado
+                Salvar
               </button>
             </div>
           </DialogPanel>
@@ -183,11 +211,11 @@ export default function CardProjeto(props: {
               className="bg-stone-700 w-full max-h-32 min-h-16 rounded-lg p-2"
               {...register("text", {
                 required: "Este campo deve ser preenchido",
-                min: { value: 5, message: "Mínimo de 5 caracteres" },
+                minLength: { value: 5, message: "Mínimo de 5 caracteres" },
                 maxLength: { value: 300, message: "Maximo de 100 caracteres" },
                 pattern: {
                   value:
-                    /^[A-Za-z0-9,!@#$%&*().;:? \n\s\u00C0-\u00FF\u0100-\u017F]+$/i,
+                    /^[A-Za-z0-9,!@#$%&*()/.;:? \n\s\u00C0-\u00FF\u0100-\u017F]+$/i,
                   message: "Este campo permite apenas letras e números",
                 },
               })}
