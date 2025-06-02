@@ -10,6 +10,7 @@ import {
   DialogBackdrop,
 } from "@headlessui/react";
 import { useState } from "react";
+import React from "react";
 
 type TextProjeto = {
   text: string;
@@ -20,10 +21,10 @@ export default function CardProjeto(props: {
   projetoName: string;
   projetoRef: string;
 }) {
-  //modal IA
-  const [isOpen, setIsOpen] = useState(false),
-    [loadingAI, setLoadingAI] = useState(false),
-    [textIA, setTextIA] = useState("");
+  const [isOpen, setIsOpen] = useState(false); //modal IA
+  const [iaStatus, setIaStatus] = useState(""); //seletor de status da busca IA
+  const [textErrorIA, setTextErrorIA] = useState({ message: "" }); //Mensagem de erro de status da busca IA
+  const [textIA, setTextIA] = useState(""); //Retorno da busca da IA
 
   //conmfigura o formulário
   const {
@@ -40,9 +41,44 @@ export default function CardProjeto(props: {
     }
   };
 
+  function loadingIA() {
+    return (
+      <div className="w-full bg-stone-900 rounded-md h-52 p-3 animate-pulse mb-3">
+        <div className="w-full bg-stone-800 rounded-md h-5 p-3 animate-pulse mb-3"></div>
+        <div className="w-full bg-stone-800 rounded-md h-5 p-3 animate-pulse mb-3"></div>
+        <div className="w-full bg-stone-800 rounded-md h-5 p-3 animate-pulse mb-3"></div>
+        <div className="w-full bg-stone-800 rounded-md h-5 p-3 animate-pulse mb-3"></div>
+      </div>
+    );
+  }
+  function sucessoIA() {
+    return (
+      <textarea
+        name="meutexto"
+        id="textoIA"
+        className="w-full bg-stone-900 rounded-md max-h-52 min-h-52 p-3"
+        defaultValue={textIA}
+      />
+    );
+  }
+  function erroIA() {
+    return (
+      <div className="w-full bg-red-900 rounded-md h-52 p-3 mb-3">
+        <p>Tivemos um erro na hora de reformular seu texto</p>
+        <p>{textErrorIA.message}</p>
+      </div>
+    );
+  }
+  const sendGeradorIA = {
+    loading: loadingIA(),
+    sucesso: sucessoIA(),
+    erro: erroIA(),
+  };
+  type iaStatusExiste = keyof typeof sendGeradorIA;
+
   //função para enviar o texto para IA
   function postBoletimGeradorIA(projetoRef: string) {
-    setLoadingAI(true);
+    setIaStatus("loading");
     const axios = require("axios").default;
 
     axios
@@ -50,24 +86,23 @@ export default function CardProjeto(props: {
         projeto: projetoRef,
         texto: watch("text"),
       })
-      .then((data: object) => {
-        console.log(data);
+      .then((data: any) => {
+        setIaStatus("sucesso");
+        setTextIA(data.data.message);
       })
       .catch((error: any) => {
         //verifica se o erro é do axios
         if (axios.isAxiosError(error)) {
           //verifica se o servior respondeu
           if (error.response) {
-            console.log(error.response.data);
+            setIaStatus("erro");
+            setTextErrorIA(error.response.data);
           } else {
             console.log("Erro de rede, o servidor não respondeu:", error);
           }
         } else {
           console.log("Erro interno inesperado:", error);
         }
-      })
-      .finally(() => {
-        setLoadingAI(false);
       });
   }
 
@@ -112,21 +147,7 @@ export default function CardProjeto(props: {
               </div>
               <label htmlFor="textoIA">
                 Gerado por IA
-                {loadingAI ? (
-                  <div className="w-full bg-stone-900 rounded-md h-52 p-3 animate-pulse mb-3">
-                    <div className="w-full bg-stone-800 rounded-md h-5 p-3 animate-pulse mb-3"></div>
-                    <div className="w-full bg-stone-800 rounded-md h-5 p-3 animate-pulse mb-3"></div>
-                    <div className="w-full bg-stone-800 rounded-md h-5 p-3 animate-pulse mb-3"></div>
-                    <div className="w-full bg-stone-800 rounded-md h-5 p-3 animate-pulse mb-3"></div>
-                  </div>
-                ) : (
-                  <textarea
-                    name="meutexto"
-                    id="textoIA"
-                    className="w-full bg-stone-900 rounded-md max-h-52 min-h-52 p-3"
-                    defaultValue={textIA}
-                  />
-                )}
+                {sendGeradorIA[iaStatus as iaStatusExiste]}
               </label>
             </div>
             <div className="flex gap-4">
