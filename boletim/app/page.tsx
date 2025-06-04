@@ -76,7 +76,7 @@ export default function Home() {
     <>
       <Nav cidade={cidadeSelecionada} />
       <div className="container mx-auto max-w-7xl">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4 max-[1000px]:grid-cols-1">
           <div className="bg-black p-5 rounded-md transition-all col-span-1">
             {/*
               FORM PARA SELECIONAR A CIDADE

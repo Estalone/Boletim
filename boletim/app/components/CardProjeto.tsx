@@ -1,12 +1,8 @@
 "use client";
 
-import {
-  SparklesIcon,
-  ClipboardDocumentCheckIcon,
-} from "@heroicons/react/24/outline";
+import { SparklesIcon } from "@heroicons/react/24/outline";
 import { useForm, SubmitHandler } from "react-hook-form";
 import {
-  Description,
   Dialog,
   DialogPanel,
   DialogTitle,
@@ -16,8 +12,10 @@ import { useState } from "react";
 import React from "react";
 
 type TextProjeto = {
-  text: string;
   projetoRef: string;
+  text: string;
+  textCopia: string;
+  textIA: string;
 };
 
 export default function CardProjeto(props: {
@@ -27,9 +25,9 @@ export default function CardProjeto(props: {
   const [isOpen, setIsOpen] = useState(false); //modal IA
   const [iaStatus, setIaStatus] = useState(""); //seletor de status da busca IA
   const [textErrorIA, setTextErrorIA] = useState({ message: "" }); //Mensagem de erro de status da busca IA
-  const [textIA, setTextIA] = useState(""); //Retorno da busca da IA
+  const [textIA, setTextIA] = useState(""); //Retorno da busca da IA (provisório)
 
-  //conmfigura o formulário
+  //configura o formulário
   const {
     register,
     handleSubmit,
@@ -38,12 +36,43 @@ export default function CardProjeto(props: {
     formState: { errors: textErrors },
   } = useForm<TextProjeto>();
 
+  function salvarBtn() {
+    return (
+      <button
+        onClick={() => setIsOpen(false)}
+        className="bg-green-900 p-2 px-5 rounded-md mt-5"
+        type="submit"
+      >
+        Salvar
+      </button>
+    );
+  }
+
+  const sendSalvarTexto = {
+    loading: "Carregando",
+    sucesso: "Sucesso",
+    salvarBtn: salvarBtn(),
+  };
+
   const onSubmitText: SubmitHandler<TextProjeto> = function (data) {
     //garante que o projeto selecionado são iguas aos vindos da prop
     if (data.projetoRef == props.projetoRef) {
-      console.log(data);
+      const axios = require("axios").default;
+
+      axios
+        .post("/api/salvarTexto", {
+          projeto: data.projetoRef,
+          texto: data.text,
+        })
+        .then((data: object) => {
+          console.log(data);
+        })
+        .catch((err: object) => {
+          console.log(err);
+        });
     }
   };
+
   //funções de estado de pesquisa de IA
   function loadingIA() {
     return (
@@ -58,11 +87,10 @@ export default function CardProjeto(props: {
   function sucessoIA() {
     return (
       <textarea
-        name="meutexto"
         id="textoIA"
         className="w-full bg-stone-900 rounded-md max-h-52 min-h-52 p-3"
         defaultValue={textIA}
-        onChange={(e) => setTextIA(e.target.value)}
+        {...register("textIA")}
       />
     );
   }
@@ -83,6 +111,7 @@ export default function CardProjeto(props: {
 
   //função para enviar o texto para IA
   function GeradorIA(projetoRef: string) {
+    //TO DO, validar os dados enviados para a IAs
     setIaStatus("loading");
     const axios = require("axios").default;
     axios
@@ -93,6 +122,7 @@ export default function CardProjeto(props: {
       .then((data: any) => {
         setIaStatus("sucesso");
         setTextIA(data.data.message);
+        setValue("textIA", data.data.message);
       })
       .catch((error: any) => {
         //verifica se o erro é do axios
@@ -115,7 +145,7 @@ export default function CardProjeto(props: {
   }
 
   function boletimIA(projetoRef: string) {
-    //verifica se o mínimo de caracteres foi atingido QUANDO ATUALIZAMOS NO MODAL
+    //verifica se o mínimo de caracteres foi atingido QUANDO FECHAMOS O MODAL
     if (watch("text").length >= 5) {
       //não existindo erro prossegue abrindo o modal
       if (!textErrors.text) {
@@ -127,9 +157,13 @@ export default function CardProjeto(props: {
       }
     }
   }
-
   function copiaTextoGerado() {
-    console.log(textIA);
+    var textCopia = watch("textIA");
+    setValue("textCopia", textCopia);
+    setValue("text", textCopia);
+  }
+  function gerarTextoIA(projetoRef: string) {
+    GeradorIA(projetoRef);
   }
 
   return (
@@ -141,7 +175,7 @@ export default function CardProjeto(props: {
       >
         <DialogBackdrop className="fixed inset-0 bg-black/50" />
         <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
-          <DialogPanel className="min-w-3xl rounded-md bg-stone-950 p-12">
+          <DialogPanel className="min-[1000px]:min-w-[900px] max-[1000px]:w-full rounded-md bg-stone-950 p-12">
             <DialogTitle className="mb-10">
               <p className="text-2xl">
                 Boletim IA <SparklesIcon className="size-5 inline" />
@@ -151,16 +185,24 @@ export default function CardProjeto(props: {
                 Use a inteligência artificial para te ajudar!
               </span>
             </DialogTitle>
-            <Description></Description>
-            <div className="grid grid-cols-2 gap-3 min-w-3xl">
+            <div className="grid grid-cols-2 gap-3 max-[1000px]:grid-cols-1">
               <div>
                 <label htmlFor="meutexto">
-                  Meu texto
+                  <div className="flex mb-3">
+                    <div>Meu texto</div>
+                    <div className="ml-3">
+                      <button
+                        className="px-2 rounded bg-green-900 text-sm"
+                        onClick={() => gerarTextoIA(props.projetoRef)}
+                      >
+                        Gerar
+                      </button>
+                    </div>
+                  </div>
                   <textarea
-                    name=""
                     id="meutexto"
                     className="w-full bg-stone-900 rounded-md max-h-52 min-h-52 p-3"
-                    defaultValue={watch("text")}
+                    {...register("textCopia")}
                     onChange={(e) => setValue("text", e.target.value)}
                   />
                   {textErrors.text && (
@@ -173,9 +215,12 @@ export default function CardProjeto(props: {
               <div>
                 <label htmlFor="textoIA">
                   <div className="flex mb-3">
-                    <div className="flex-1">Gerado por IA</div>
-                    <div>
-                      <button className="px-2 rounded bg-blue-900 text-sm">
+                    <div>Gerado por IA</div>
+                    <div className="ml-3">
+                      <button
+                        className="px-2 rounded bg-blue-900 text-sm"
+                        onClick={() => copiaTextoGerado()}
+                      >
                         Copiar
                       </button>
                     </div>
@@ -219,6 +264,7 @@ export default function CardProjeto(props: {
                   message: "Este campo permite apenas letras e números",
                 },
               })}
+              onChange={(e) => setValue("textCopia", e.target.value)}
             />
             {textErrors.text && (
               <p className="text-sm text-red-500">{textErrors.text.message}</p>
@@ -226,6 +272,7 @@ export default function CardProjeto(props: {
             <button
               className="bg-green-900 p-2 px-5 rounded-md mt-1 mr-3 text-sm"
               onClick={() => boletimIA(props.projetoRef)}
+              type="button"
             >
               Boletim IA
               <SparklesIcon className="size-4 inline ml-3" />
