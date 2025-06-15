@@ -20,8 +20,10 @@ type Projetos = {
 };
 
 export default function Home() {
+  const [semana, setSemana] = useState("");
   //configura o form da cidade
   const [cidadeSelecionada, setCidadeSelecionada] = useState("");
+
   const {
     register: registerCidade,
     handleSubmit: handleSubmitCidade,
@@ -71,6 +73,61 @@ export default function Home() {
     setValueProjeto("outsourcing", false);
     setValueProjeto("DOC", false);
   }
+
+  //semana referente ao preenchimento
+  useEffect(() => {
+    let dataAtual = new Date();
+    let semanaAtual = dataAtual.getDay(); //dia da semana seg (1), ter (2), qua (3), qui (4), sex (5), sab (6), dom (0),
+    let dia = dataAtual.getDate(); //dia
+    let mes = dataAtual.getMonth(); //mes
+
+    //subtrai o dia da semana para sempre cair no dia da segunda-feira
+    const inicioSemana = {
+      0: dia - 6, // domingo
+      1: dia, //permanece na segunda
+      2: dia - 1, //ter
+      3: dia - 2, //qua
+      4: dia - 3, //qui
+      5: dia - 4, //sex
+      6: dia - 5, //sab
+    };
+
+    //adiciona o dia da semana para sempre cair no dia da sexta-feira
+    const finalSemana = {
+      0: dia - 2, //dom
+      1: dia + 4, //seg
+      2: dia + 3, //ter
+      3: dia + 2, //qua
+      4: dia + 1, //qui
+      5: dia, // sex
+      6: dia - 1, //sab
+    };
+
+    //ajustando o dia para o padrão 00
+    if (inicioSemana[semanaAtual] < 10) {
+      inicioSemana[semanaAtual] = "0" + inicioSemana[semanaAtual];
+    }
+
+    //ajustando o dia para o padrão 00
+    if (finalSemana[semanaAtual] < 10) {
+      inicioSemana[semanaAtual] = "0" + inicioSemana[semanaAtual];
+    }
+
+    //ajustando o mês
+    if (mes < 10) {
+      mes = "0" + mes;
+    }
+
+    setSemana(
+      inicioSemana[semanaAtual] +
+        "/" +
+        mes +
+        " até " +
+        finalSemana[semanaAtual] +
+        "/" +
+        mes
+    );
+  }, []);
 
   return (
     <>
@@ -185,7 +242,7 @@ export default function Home() {
             <p className="mb-4">
               Referência:{" "}
               <span className="bg-stone-800 px-3 rounded-full">
-                12/09 - 17/09
+                {!semana ? "..." : semana}
               </span>
             </p>
             {projetosCard.saudeSimples && (

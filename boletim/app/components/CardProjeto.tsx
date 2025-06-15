@@ -10,6 +10,7 @@ import {
 } from "@headlessui/react";
 import { useState } from "react";
 import React from "react";
+import Loading from "./loading";
 
 type TextProjeto = {
   projetoRef: string;
@@ -51,7 +52,7 @@ export default function CardProjeto(props: {
   function loadingSalvar() {
     return (
       <div className="bg-blue-950 p-2 px-8 rounded-md mt-1 text-sm">
-        <div className="h-5 w-5 rounded-full border-4 border-r-black/50 border-y-white/10 border-l-white/10 animate-spin"></div>
+        <Loading />
       </div>
     );
   }
@@ -319,7 +320,7 @@ export default function CardProjeto(props: {
         <div className="flex items-baselinep-3 bg-stone-800 rounded mb-4 h-56">
           <div className="flex-1 self-center text-center">
             <p className="text-lg">
-              <CheckCircleIcon className="size-5 inline mr-2" /> Salvo
+              <CheckCircleIcon className="size-5 inline mr-2" /> Boletim salvo
             </p>
           </div>
         </div>
